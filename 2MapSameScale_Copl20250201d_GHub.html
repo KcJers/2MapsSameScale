@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>2 Maps In Same Scale</title>
+  <style>
+    /* Your existing CSS styles */
+    /* ... (keeping all your styles unchanged) ... */
+
+    /* Set html and body to 100% height */
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    /* Style the map containers */
+    #map1,
+    #map2 {
+      width: 100%;
+      height: 49%;
+      position: relative;
+    }
+    /* Style the separator */
+    #separator {
+      height: 2px;
+      background-color: #000;
+    }
+    /* Style for the rotation controls */
+    .ol-rotate {
+      top: 5px;
+      right: 5px;
+    }
+    /* Style for scale bars */
+    .ol-scale-line {
+      bottom: 5px;
+      left: 5px;
+    }
+    /* Compass heading display */
+    .compass-heading {
+      position: absolute;
+      top: 10px;
+      right: 50px; /* Adjusted to be next to the reset-to-north button */
+      background-color: rgba(255, 255, 255, 0.7);
+      padding: 5px;
+      font-size: 14px;
+      border-radius: 4px;
+      z-index: 1000;
+      pointer-events: none;
+    }
+    /* Crosshair */
+    .crosshair {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 20px;
+      height: 20px;
+      margin-left: -10px;
+      margin-top: -10px;
+      pointer-events: none;
+      z-index: 1000;
+    }
+    .crosshair:before,
+    .crosshair:after {
+      content: '';
+      position: absolute;
+      background-color: red;
+    }
+    /* Horizontal line */
+    .crosshair:before {
+      left: 0;
+      top: 50%;
+      width: 100%;
+      height: 1px;
+      margin-top: -0.5px;
+    }
+    /* Vertical line */
+    .crosshair:after {
+      top: 0;
+      left: 50%;
+      width: 1px;
+      height: 100%;
+      margin-left: -0.5px;
+    }
+  </style>
+  <!-- OpenLayers CSS from CDN -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@6.15.1/ol.css">
+</head>
+<body>
+
+  <div id="map1">
+    <div class="compass-heading" id="heading1">Heading: 0°</div>
+    <div class="crosshair"></div>
+  </div>
+  <div id="separator"></div>
+  <div id="map2">
+    <div class="compass-heading" id="heading2">Heading: 0°</div>
+    <div class="crosshair"></div>
+  </div>
+
+  <!-- OpenLayers JS from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/ol@6.15.1/dist/ol.js"></script>
+
+  <script>
+    // Your existing JavaScript code
+    // ... (keeping all your logic unchanged) ...
+
+    // Coordinates for Manhattan and Singapore
+    const manhattanCoords = ol.proj.fromLonLat([-73.985656, 40.748817]);
+    const singaporeCoords = ol.proj.fromLonLat([103.851959, 1.290270]);
+
+    // Create views with specific center and zoom level
+    const view1 = new ol.View({
+      center: manhattanCoords,
+      zoom: 14,
+      rotation: 0
+    });
+
+    const view2 = new ol.View({
+      center: singaporeCoords,
+      zoom: 14,
+      rotation: 0
+    });
+
+    // Function to format rotation in degrees
+    function formatRotation(rotation) {
+      let degrees = rotation * (180 / Math.PI);
+      if (degrees < 0) {
+        degrees += 360;
+      }
+      return degrees.toFixed(2) + '°';
+    }
+
+    // Function to synchronize zoom levels
+    function synchronizeZoom(viewA, viewB) {
+      viewA.on('change:resolution', function() {
+        if (viewA.getZoom() !== viewB.getZoom()) {
+          viewB.setZoom(viewA.getZoom());
+        }
+      });
+    }
+
+    // Function to display heading
+    function updateHeading(view, elementId) {
+      const headingElement = document.getElementById(elementId);
+      function displayHeading() {
+        const rotation = view.getRotation();
+        headingElement.textContent = 'Heading: ' + formatRotation(-rotation);
+      }
+      view.on('change:rotation', displayHeading);
+      displayHeading();
+    }
+
+    // Create the first map
+    const map1 = new ol.Map({
+      target: 'map1',
+      view: view1,
+      layers: [
+        new ol.layer.Tile({
+          source: new ol.source.OSM()
+        })
+      ],
+      controls: ol.control.defaults({
+        attribution: false
+      }).extend([
+        new ol.control.Rotate({
+          autoHide: false,
+          label: '🧭',
+          tipLabel: 'Reset rotation'
+        }),
+        new ol.control.ScaleLine()
+      ])
+    });
+
+    // Create the second map
+    const map2 = new ol.Map({
+      target: 'map2',
+      view: view2,
+      layers: [
+        new ol.layer.Tile({
+          source: new ol.source.OSM()
+        })
+      ],
+      controls: ol.control.defaults({
+        attribution: false
+      }).extend([
+        new ol.control.Rotate({
+          autoHide: false,
+          label: '🧭',
+          tipLabel: 'Reset rotation'
+        }),
+        new ol.control.ScaleLine()
+      ])
+    });
+
+    // Synchronize zoom levels between the two maps
+    synchronizeZoom(view1, view2);
+    synchronizeZoom(view2, view1);
+
+    // Update compass heading display for each map
+    updateHeading(view1, 'heading1');
+    updateHeading(view2, 'heading2');
+  </script>
+
+</body>
+</html>
