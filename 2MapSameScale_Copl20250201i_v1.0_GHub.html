@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>2 Maps In Same Scale</title>
+  <style>
+    /* ... [Keep all your styles unchanged] ... */
+
+    /* Set html and body to 100% height */
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    /* Style the map containers */
+    #map1,
+    #map2 {
+      width: 100%;
+      height: 49%;
+      position: relative;
+    }
+    /* Style the separator */
+    #separator {
+      height: 2px;
+      background-color: #000;
+    }
+    /* Style for the rotation controls */
+    .ol-rotate {
+      top: 5px;
+      right: 5px;
+    }
+    /* Style for scale bars */
+    .ol-scale-line {
+      bottom: 5px;
+      left: 5px;
+    }
+    /* Compass heading display */
+    .compass-heading {
+      position: absolute;
+      top: 10px;
+      right: 80px; /* Adjusted to be next to the reset-to-north button */
+      background-color: rgba(255, 255, 255, 0.7);
+      padding: 5px;
+      font-size: 14px;
+      border-radius: 4px;
+      z-index: 1000;
+      pointer-events: none;
+    }
+    /* Crosshair */
+    .crosshair {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 20px;
+      height: 20px;
+      margin-left: -10px;
+      margin-top: -10px;
+      pointer-events: none;
+      z-index: 1000;
+    }
+    .crosshair:before,
+    .crosshair:after {
+      content: '';
+      position: absolute;
+      background-color: red;
+    }
+    /* Horizontal line */
+    .crosshair:before {
+      left: 0;
+      top: 50%;
+      width: 100%;
+      height: 1px;
+      margin-top: -0.5px;
+    }
+    /* Vertical line */
+    .crosshair:after {
+      top: 0;
+      left: 50%;
+      width: 1px;
+      height: 100%;
+      margin-left: -0.5px;
+    }
+    /* Share button styling */
+    #shareButton {
+      position: absolute;
+      right: 10px;
+      top: 40px;
+      z-index: 1000;
+    }
+  </style>
+
+  <!-- OpenLayers CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@latest/en/v6.15.1/css/ol.css" type="text/css">
+
+</head>
+<body>
+
+  <div id="map1">
+    <div class="compass-heading" id="heading1">Heading: 0°</div>
+    <div class="crosshair"></div>
+    <button id="shareButton">Share</button>
+  </div>
+  <div id="separator"></div>
+  <div id="map2">
+    <div class="compass-heading" id="heading2">Heading: 0°</div>
+    <div class="crosshair"></div>
+  </div>
+
+  <!-- OpenLayers JS -->
+  <script src="https://cdn.jsdelivr.net/gh/openlayers/openlayers.github.io@latest/en/v6.15.1/build/ol.js"></script>
+
+  <script>
+    // Coordinates for Manhattan and Singapore
+    const manhattanCoords = ol.proj.fromLonLat([-73.985656, 40.748817]); // Longitude, Latitude
+    const singaporeCoords = ol.proj.fromLonLat([103.851959, 1.290270]);
+
+    // Create views with specific center and zoom level
+    const view1 = new ol.View({
+      center: manhattanCoords,
+      zoom: 10,
+      rotation: 0
+    });
+
+    const view2 = new ol.View({
+      center: singaporeCoords,
+      zoom: 10,
+      rotation: 0
+    });
+
+    // Function to format rotation in degrees
+    function formatRotation(rotation) {
+      let degrees = rotation * (180 / Math.PI);
+      if (degrees < 0) {
+        degrees += 360;
+      }
+      return degrees.toFixed(2) + '°';
+    }
+
+    // Function to synchronize zoom levels
+    function synchronizeZoom(viewA, viewB) {
+      viewA.on('change:resolution', function() {
+        if (viewA.getZoom() !== viewB.getZoom()) {
+          viewB.setZoom(viewA.getZoom());
+        }
+      });
+    }
+
+    // Function to display heading
+    function updateHeading(view, elementId) {
+      const headingElement = document.getElementById(elementId);
+      function displayHeading() {
+        const rotation = view.getRotation();
+        headingElement.textContent = 'Heading: ' + formatRotation(-rotation);
+      }
+      view.on('change:rotation', displayHeading);
+      displayHeading();
+    }
+
+    // Create the first map
+    const map1 = new ol.Map({
+      target: 'map1',
+      view: view1,
+      layers: [
+        new ol.layer.Tile({
+          source: new ol.source.OSM()
+        })
+      ],
+      controls: ol.control.defaults({
+        attribution: false
+      }).extend([
+        new ol.control.Rotate({
+          autoHide: false,
+          label: '🧭',
+          tipLabel: 'Reset rotation'
+        }),
+        new ol.control.ScaleLine()
+      ])
+    });
+
+    // Create the second map
+    const map2 = new ol.Map({
+      target: 'map2',
+      view: view2,
+      layers: [
+        new ol.layer.Tile({
+          source: new ol.source.OSM()
+        })
+      ],
+      controls: ol.control.defaults({
+        attribution: false
+      }).extend([
+        new ol.control.Rotate({
+          autoHide: false,
+          label: '🧭',
+          tipLabel: 'Reset rotation'
+        }),
+        new ol.control.ScaleLine()
+      ])
+    });
+
+    // Synchronize zoom levels between the two maps
+    synchronizeZoom(view1, view2);
+    synchronizeZoom(view2, view1);
+
+    // Update compass heading display for each map
+    updateHeading(view1, 'heading1');
+    updateHeading(view2, 'heading2');
+
+    // Parse map state from URL parameters on page load
+    function parseMapStateFromURL() {
+      const params = new URLSearchParams(window.location.search);
+      
+      // Map 1
+      if (params.has('map1_center')) {
+        const centerStr = params.get('map1_center');
+        const centerArr = centerStr.split(',').map(Number);
+        const center = ol.proj.fromLonLat(centerArr); // Convert back to map projection
+        view1.setCenter(center);
+      }
+      if (params.has('map1_zoom')) {
+        view1.setZoom(Number(params.get('map1_zoom')));
+      }
+      if (params.has('map1_rotation')) {
+        view1.setRotation(Number(params.get('map1_rotation')));
+      }
+      
+      // Map 2
+      if (params.has('map2_center')) {
+        const centerStr = params.get('map2_center');
+        const centerArr = centerStr.split(',').map(Number);
+        const center = ol.proj.fromLonLat(centerArr);
+        view2.setCenter(center);
+      }
+      if (params.has('map2_zoom')) {
+        view2.setZoom(Number(params.get('map2_zoom')));
+      }
+      if (params.has('map2_rotation')) {
+        view2.setRotation(Number(params.get('map2_rotation')));
+      }
+    }
+
+    parseMapStateFromURL();
+
+    // Function to get map state
+    function getMapState(map) {
+      const view = map.getView();
+      const center = ol.proj.toLonLat(view.getCenter());
+      return {
+        center: center, // [longitude, latitude]
+        zoom: view.getZoom(),
+        rotation: view.getRotation()
+      };
+    }
+
+    // Function to generate share URL
+    function generateShareURL(map1State, map2State) {
+      const baseURL = window.location.origin + window.location.pathname;
+      const queryParams = new URLSearchParams({
+        map1_center: map1State.center.join(','),
+        map1_zoom: map1State.zoom,
+        map1_rotation: map1State.rotation,
+        map2_center: map2State.center.join(','),
+        map2_zoom: map2State.zoom,
+        map2_rotation: map2State.rotation
+      });
+      return `${baseURL}?${queryParams.toString()}`;
+    }
+
+    // Function to copy text to clipboard with fallback
+    function copyToClipboard(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        // Navigator clipboard API method
+        return navigator.clipboard.writeText(text);
+      } else {
+        // Fallback method
+        let textArea = document.createElement("textarea");
+        textArea.value = text;
+        // Ensure the text area is not visible on the screen
+        textArea.style.position = "fixed";
+        textArea.style.top = "-1000px";
+        textArea.style.left = "-1000px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        return new Promise((res, rej) => {
+          // Execute the copy command
+          document.execCommand('copy') ? res() : rej();
+          textArea.remove();
+        });
+      }
+    }
+
+    // Event listener for the Share button
+    document.getElementById('shareButton').addEventListener('click', () => {
+      const map1State = getMapState(map1);
+      const map2State = getMapState(map2);
+      const shareURL = generateShareURL(map1State, map2State);
+      
+      copyToClipboard(shareURL).then(() => {
+        alert('Link copied to clipboard!');
+      }).catch(err => {
+        console.error('Failed to copy link: ', err);
+        alert('Failed to copy link.');
+      });
+    });
+  </script>
+
+</body>
+</html>
