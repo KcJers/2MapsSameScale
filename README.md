@@ -9,7 +9,7 @@ This file: https://kcjers.github.io/2MapsSameScale/
 4) One can share the 2-map web page of their desired locations with the "Share" button to copy its web link (URL).
 
 =======================
-https://kcjers.github.io/2MapsSameScale/2MapSameScale_Copl20250201j_v1.1_GHub.html
-<2026-06-24> Version 1.1: 
 
+<2026-06-24> Version 1.1: 
+https://kcjers.github.io/2MapsSameScale/2MapSameScale_Copl20250201j_v1.1_GHub.html
 5) Add option to display aerial satellite image.
