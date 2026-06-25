@@ -8,6 +8,6 @@ This file: https://kcjers.github.io/2MapsSameScale/
 3) Each map can be rotated so that the geographical locations with their shapes can be oriented almost similarly. A "Heading" indicator at top right corner shows the bearing. For Windows PC without touch screen, rotation is done by Alt-Shift dragging the cursor. A "Reset-To-North" button can reset the map to show North poinhting to top.
 4) One can share the 2-map web page of their desired locations with the "Share" button to copy its web link (URL).
 
-=======================
+======================= 
 <2026-06-24> Version 1.1: 
 5) Add option to display aerial satellite image.
