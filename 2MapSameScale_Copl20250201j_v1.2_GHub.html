@@ -192,7 +192,10 @@
 
     // Define tile layers for Map 1
     const osmLayer1 = new ol.layer.Tile({
-      source: new ol.source.OSM(),
+      source: new ol.source.XYZ({
+        url: 'https://{a-d}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+        attributions: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+	  }),
       visible: true // Visible by default
     });
     const satLayer1 = new ol.layer.Group({
@@ -223,7 +226,10 @@
 
     // Define tile layers for Map 2
     const osmLayer2 = new ol.layer.Tile({
-      source: new ol.source.OSM(),
+      source: new ol.source.XYZ({
+        url: 'https://{a-d}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+        attributions: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+	  }),
       visible: true // Visible by default
     });
     const satLayer2 = new ol.layer.Group({
