@@ -14,3 +14,7 @@ This file: https://kcjers.github.io/2MapsSameScale/
 https://kcjers.github.io/2MapsSameScale/2MapSameScale_Copl20250201j_v1.1_GHub.html
 
 5) Add option to display aerial satellite image.
+=======================
+
+<2026-06-24> Version 1.1: 
+https://kcjers.github.io/2MapsSameScale/2MapSameScale_Copl20250201j_v1.1_GHub.html
