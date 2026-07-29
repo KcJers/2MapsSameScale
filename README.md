@@ -2,7 +2,8 @@
 =======================
 This file: https://kcjers.github.io/2MapsSameScale/
 =======================
-<2025-02-02> Version 1.0: https://kcjers.github.io/2MapsSameScale/2MapSameScale_Copl20250201i_v1.0_GHub.html
+<2025-02-02> Version 1.0:
+
 1) HTML web page to display 2 maps that can be synchronously zoomed in/out in the same scale/level.
 2) Each map can be panned to desirable locations for comparison.
 3) Each map can be rotated so that the geographical locations with their shapes can be oriented almost similarly. A "Heading" indicator at top right corner shows the bearing. For Windows PC without touch screen, rotation is done by Alt-Shift dragging the cursor. A "Reset-To-North" button can reset the map to show North poinhting to top.
@@ -11,13 +12,13 @@ This file: https://kcjers.github.io/2MapsSameScale/
 =======================
 
 <2026-06-24> Version 1.1: 
-https://kcjers.github.io/2MapsSameScale/2MapSameScale_Copl20250201j_v1.1_GHub.html
 
 5) Add option to display aerial satellite image.
 
 =======================
 
 <2026-07-28> Version 1.2: 
+
 https://kcjers.github.io/2MapsSameScale/2MapSameScale_Copl20250201j_v1.2_GHub.html
 
 6) Fix error. Replace the fragile GitHub repository CDN links with the official npm package CDN links hosted on jsDelivr.
