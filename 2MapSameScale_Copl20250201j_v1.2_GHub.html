@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>2 Maps In Same Scale</title>
+  <style>
+    /* Set html and body to 100% height */
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+    /* Style the map containers */
+    #map1,
+    #map2 {
+      width: 100%;
+      height: 49%;
+      position: relative;
+    }
+    /* Style the separator */
+    #separator {
+      height: 2px;
+      background-color: #000;
+    }
+    /* Compass heading display */
+    .compass-heading {
+      position: absolute;
+      top: 10px;
+      right: 80px; /* Positioned next to the compass control */
+      background-color: rgba(255, 255, 255, 0.85);
+      padding: 5px 8px;
+      font-size: 14px;
+      font-family: sans-serif;
+      border-radius: 4px;
+      z-index: 1000;
+      pointer-events: none;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+    /* Crosshair */
+    .crosshair {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 20px;
+      height: 20px;
+      margin-left: -10px;
+      margin-top: -10px;
+      pointer-events: none;
+      z-index: 1000;
+    }
+    .crosshair:before,
+    .crosshair:after {
+      content: '';
+      position: absolute;
+      background-color: red;
+    }
+    /* Horizontal line */
+    .crosshair:before {
+      left: 0;
+      top: 50%;
+      width: 100%;
+      height: 1px;
+      margin-top: -0.5px;
+    }
+    /* Vertical line */
+    .crosshair:after {
+      top: 0;
+      left: 50%;
+      width: 1px;
+      height: 100%;
+      margin-left: -0.5px;
+    }
+    /* Share button styling - Gap added below navigation control */
+    #shareButton {
+      position: absolute;
+      right: 10px;
+      top: 115px; /* Creates a clear gap below the Reset to North / Nav block */
+      z-index: 1000;
+      padding: 8px 16px;
+      font-size: 14px;
+      font-family: sans-serif;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+    #shareButton:hover {
+      background-color: #0056b3;
+    }
+    /* Layer switcher dropdown styling */
+    .layer-switcher {
+      position: absolute;
+      top: 10px;
+      left: 50px; /* Positioned to the right of zoom controls */
+      z-index: 1000;
+      padding: 5px;
+      font-size: 14px;
+      font-family: sans-serif;
+      background-color: rgba(255, 255, 255, 0.9);
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      cursor: pointer;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+    /* Search box styling - Bottom Left, right of scale bar */
+    .search-container {
+      position: absolute;
+      bottom: 10px;
+      left: 110px; /* Positioned to the right of the scale bar */
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background-color: rgba(255, 255, 255, 0.9);
+      padding: 3px 5px;
+      border-radius: 4px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+    }
+    .search-input {
+      padding: 5px 8px;
+      font-size: 13px;
+      font-family: sans-serif;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      outline: none;
+      width: 150px;
+    }
+    .search-btn {
+      padding: 5px 10px;
+      font-size: 13px;
+      font-family: sans-serif;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    .search-btn:hover {
+      background-color: #218838;
+    }
+  </style>
+
+  <!-- MapLibre GL JS CDN (Vector Map Renderer) -->
+  <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet" />
+
+</head>
+<body>
+
+  <div id="map1">
+    <select class="layer-switcher" id="layerSwitch1">
+      <option value="osm">Street Map</option>
+      <option value="sat">Hybrid Satellite</option>
+    </select>  
+    <div class="compass-heading" id="heading1">Heading: 0°</div>
+    <div class="crosshair"></div>
+    <button id="shareButton">Share</button>
+
+    <!-- Search Box for Map 1 -->
+    <div class="search-container">
+      <input type="text" class="search-input" id="searchInput1" placeholder="Search location..." />
+      <button class="search-btn" id="searchBtn1">Search</button>
+    </div>
+  </div>
+
+  <div id="separator"></div>
+
+  <div id="map2">
+    <select class="layer-switcher" id="layerSwitch2">
+      <option value="osm">Street Map</option>
+      <option value="sat">Hybrid Satellite</option>
+    </select>
+    <div class="compass-heading" id="heading2">Heading: 0°</div>
+    <div class="crosshair"></div>
+
+    <!-- Search Box for Map 2 -->
+    <div class="search-container">
+      <input type="text" class="search-input" id="searchInput2" placeholder="Search location..." />
+      <button class="search-btn" id="searchBtn2">Search</button>
+    </div>
+  </div>
+
+  <!-- MapLibre GL JS CDN -->
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+
+  <script>
+    // Coordinates for Manhattan and Singapore [Longitude, Latitude]
+    const manhattanCoords = [-73.985656, 40.748817];
+    const singaporeCoords = [103.851959, 1.290270];
+
+    // Initialize Map 1 with OpenFreeMap Bright Vector Style
+    const map1 = new maplibregl.Map({
+      container: 'map1',
+      style: 'https://tiles.openfreemap.org/styles/bright',
+      center: manhattanCoords,
+      zoom: 10,
+      bearing: 0
+    });
+
+    // Initialize Map 2 with OpenFreeMap Bright Vector Style
+    const map2 = new maplibregl.Map({
+      container: 'map2',
+      style: 'https://tiles.openfreemap.org/styles/bright',
+      center: singaporeCoords,
+      zoom: 10,
+      bearing: 0
+    });
+
+    // Add navigation (zoom & rotation compass) and scale controls
+    map1.addControl(new maplibregl.NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
+    map1.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
+
+    map2.addControl(new maplibregl.NavigationControl({ showCompass: true, showZoom: true }), 'top-right');
+    map2.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
+
+    // Dual-language label formatting rule for OpenFreeMap vector layers
+    function applyDualLanguage(map) {
+      const style = map.getStyle();
+      if (!style || !style.layers) return;
+
+      const dualLangExpression = [
+        'case',
+        ['any', ['has', 'name:zh-Hans'], ['has', 'name:zh'], ['has', 'name_zh']],
+        [
+          'format',
+          ['coalesce', ['get', 'name:zh-Hans'], ['get', 'name:zh'], ['get', 'name_zh'], ['get', 'name']],
+          { 'font-scale': 1.0 },
+          '\n',
+          {},
+          ['coalesce', ['get', 'name:en'], ['get', 'name_en'], ''],
+          { 'font-scale': 0.8, 'text-color': '#555555' }
+        ],
+        ['coalesce', ['get', 'name:en'], ['get', 'name_en'], ['get', 'name']]
+      ];
+
+      style.layers.forEach(layer => {
+        if (layer.type === 'symbol' && layer.layout && layer.layout['text-field']) {
+          map.setLayoutProperty(layer.id, 'text-field', dualLangExpression);
+        }
+      });
+    }
+
+    // Setup Esri Hybrid Satellite raster sources and layers
+    function setupSatelliteLayers(map) {
+      map.addSource('esri-sat', {
+        type: 'raster',
+        tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+        tileSize: 256,
+        maxzoom: 19
+      });
+      map.addSource('esri-streets', {
+        type: 'raster',
+        tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}'],
+        tileSize: 256,
+        maxzoom: 19
+      });
+      map.addSource('esri-labels', {
+        type: 'raster',
+        tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}'],
+        tileSize: 256,
+        maxzoom: 19
+      });
+
+      map.addLayer({
+        id: 'sat-layer',
+        type: 'raster',
+        source: 'esri-sat',
+        layout: { visibility: 'none' }
+      });
+      map.addLayer({
+        id: 'streets-layer',
+        type: 'raster',
+        source: 'esri-streets',
+        layout: { visibility: 'none' }
+      });
+      map.addLayer({
+        id: 'labels-layer',
+        type: 'raster',
+        source: 'esri-labels',
+        layout: { visibility: 'none' }
+      });
+    }
+
+    // Apply layers when styles are ready
+    map1.on('load', () => {
+      applyDualLanguage(map1);
+      setupSatelliteLayers(map1);
+    });
+
+    map2.on('load', () => {
+      applyDualLanguage(map2);
+      setupSatelliteLayers(map2);
+    });
+
+    // Geocoding Search Functionality
+    async function geocodeAndFly(map, query) {
+      if (!query.trim()) return;
+      try {
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        if (data && data.length > 0) {
+          const lat = parseFloat(data[0].lat);
+          const lon = parseFloat(data[0].lon);
+          map.flyTo({ center: [lon, lat], zoom: 12 });
+        } else {
+          alert('Location not found.');
+        }
+      } catch (err) {
+        console.error('Search error:', err);
+        alert('Error searching location.');
+      }
+    }
+
+    // Event listeners for Map 1 Search
+    document.getElementById('searchBtn1').addEventListener('click', () => {
+      geocodeAndFly(map1, document.getElementById('searchInput1').value);
+    });
+    document.getElementById('searchInput1').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') geocodeAndFly(map1, e.target.value);
+    });
+
+    // Event listeners for Map 2 Search
+    document.getElementById('searchBtn2').addEventListener('click', () => {
+      geocodeAndFly(map2, document.getElementById('searchInput2').value);
+    });
+    document.getElementById('searchInput2').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') geocodeAndFly(map2, e.target.value);
+    });
+
+    // Format rotation/bearing in degrees
+    function formatRotation(bearing) {
+      let degrees = (360 - bearing) % 360;
+      if (degrees < 0) degrees += 360;
+      return degrees.toFixed(2) + '°';
+    }
+
+    // Synchronize zoom levels between the two maps
+    let isSyncing = false;
+    function synchronizeZoom(mapA, mapB) {
+      mapA.on('zoom', () => {
+        if (isSyncing) return;
+        isSyncing = true;
+        if (Math.abs(mapA.getZoom() - mapB.getZoom()) > 0.001) {
+          mapB.setZoom(mapA.getZoom());
+        }
+        isSyncing = false;
+      });
+    }
+
+    synchronizeZoom(map1, map2);
+    synchronizeZoom(map2, map1);
+
+    // Update compass heading display for each map
+    function updateHeading(map, elementId) {
+      const headingElement = document.getElementById(elementId);
+      function displayHeading() {
+        headingElement.textContent = 'Heading: ' + formatRotation(map.getBearing());
+      }
+      map.on('rotate', displayHeading);
+      displayHeading();
+    }
+
+    updateHeading(map1, 'heading1');
+    updateHeading(map2, 'heading2');
+
+    // Parse map state from URL parameters on page load
+    function parseMapStateFromURL() {
+      const params = new URLSearchParams(window.location.search);
+      
+      // Map 1
+      if (params.has('map1_center')) {
+        const centerArr = params.get('map1_center').split(',').map(Number);
+        if (centerArr.length === 2 && !isNaN(centerArr[0]) && !isNaN(centerArr[1])) {
+          map1.setCenter(centerArr);
+        }
+      }
+      if (params.has('map1_zoom')) {
+        const z = Number(params.get('map1_zoom'));
+        if (!isNaN(z)) map1.setZoom(z);
+      }
+      if (params.has('map1_rotation')) {
+        const r = Number(params.get('map1_rotation'));
+        if (!isNaN(r)) map1.setBearing(r);
+      }
+      
+      // Map 2
+      if (params.has('map2_center')) {
+        const centerArr = params.get('map2_center').split(',').map(Number);
+        if (centerArr.length === 2 && !isNaN(centerArr[0]) && !isNaN(centerArr[1])) {
+          map2.setCenter(centerArr);
+        }
+      }
+      if (params.has('map2_zoom')) {
+        const z = Number(params.get('map2_zoom'));
+        if (!isNaN(z)) map2.setZoom(z);
+      }
+      if (params.has('map2_rotation')) {
+        const r = Number(params.get('map2_rotation'));
+        if (!isNaN(r)) map2.setBearing(r);
+      }
+    }
+
+    parseMapStateFromURL();
+
+    // Get current state of a map
+    function getMapState(map) {
+      const center = map.getCenter();
+      return {
+        center: [Number(center.lng.toFixed(6)), Number(center.lat.toFixed(6))],
+        zoom: Number(map.getZoom().toFixed(2)),
+        rotation: Number(map.getBearing().toFixed(2))
+      };
+    }
+
+    // Generate share URL
+    function generateShareURL(map1State, map2State) {
+      const baseURL = window.location.origin + window.location.pathname;
+      const queryParams = new URLSearchParams({
+        map1_center: map1State.center.join(','),
+        map1_zoom: map1State.zoom,
+        map1_rotation: map1State.rotation,
+        map2_center: map2State.center.join(','),
+        map2_zoom: map2State.zoom,
+        map2_rotation: map2State.rotation
+      });
+      return `${baseURL}?${queryParams.toString()}`;
+    }
+
+    // Copy text to clipboard with fallback
+    function copyToClipboard(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        return navigator.clipboard.writeText(text);
+      } else {
+        let textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.top = "-1000px";
+        textArea.style.left = "-1000px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        return new Promise((res, rej) => {
+          document.execCommand('copy') ? res() : rej();
+          textArea.remove();
+        });
+      }
+    }
+
+    // Share button listener
+    document.getElementById('shareButton').addEventListener('click', () => {
+      const map1State = getMapState(map1);
+      const map2State = getMapState(map2);
+      const shareURL = generateShareURL(map1State, map2State);
+      
+      copyToClipboard(shareURL).then(() => {
+        alert('Link copied to clipboard!');
+      }).catch(err => {
+        console.error('Failed to copy link: ', err);
+        alert('Failed to copy link.');
+      });
+    });
+
+    // Toggle layers for Map 1
+    document.getElementById('layerSwitch1').addEventListener('change', function(e) {
+      const isSat = e.target.value === 'sat';
+      const vis = isSat ? 'visible' : 'none';
+      if (map1.getLayer('sat-layer')) map1.setLayoutProperty('sat-layer', 'visibility', vis);
+      if (map1.getLayer('streets-layer')) map1.setLayoutProperty('streets-layer', 'visibility', vis);
+      if (map1.getLayer('labels-layer')) map1.setLayoutProperty('labels-layer', 'visibility', vis);
+    });
+
+    // Toggle layers for Map 2
+    document.getElementById('layerSwitch2').addEventListener('change', function(e) {
+      const isSat = e.target.value === 'sat';
+      const vis = isSat ? 'visible' : 'none';
+      if (map2.getLayer('sat-layer')) map2.setLayoutProperty('sat-layer', 'visibility', vis);
+      if (map2.getLayer('streets-layer')) map2.setLayoutProperty('streets-layer', 'visibility', vis);
+      if (map2.getLayer('labels-layer')) map2.setLayoutProperty('labels-layer', 'visibility', vis);
+    });
+  </script>
+
+</body>
+</html>
