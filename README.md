@@ -22,4 +22,6 @@ This file: https://kcjers.github.io/2MapsSameScale/
 https://kcjers.github.io/2MapsSameScale/2MapSameScale_Copl20250201j_v1.2_GHub.html
 
 6) Fix error. Replace the fragile GitHub repository CDN links with the official npm package CDN links hosted on jsDelivr.
+7) Change to OpenFreeMap for bilingual labels of places.
+8) Add "Search" box; and place "Share" button with gap to "Reset To North" button.
 =======================
